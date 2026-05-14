@@ -157,6 +157,17 @@ src/
 ```
 
 ---
+###Login Page
+![Login] (<img width="1568" height="719" alt="Screenshot 2026-05-14 093244" src="https://github.com/user-attachments/assets/326b3fc5-e990-4e0d-a6ad-ec194592ea11" />
+)
+###Registration Page
+![Registration] (<img width="1588" height="716" alt="Screenshot 2026-05-14 093428" src="https://github.com/user-attachments/assets/d90f29b0-4a88-41f3-b526-2b333f47fabd" />
+)
+
+###Payment screen
+![Payment] (<img width="1592" height="729" alt="Screenshot 2026-05-14 092835" src="https://github.com/user-attachments/assets/572dbf94-68e6-4ade-931f-b65f33cb0a5b" />
+)
+
 
 ## 🛠 Tools Used
 
