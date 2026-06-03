@@ -1,0 +1,100 @@
+# .circleci/config.yml
+# CircleCI Pipeline with SonarQube Security Scan
+# Runs automatically on every push to main branch
+# Checks for: code smells, security hotspots, vulnerabilities, bugs
+
+version: 2.1
+
+orbs:
+  node: circleci/node@5.2.0
+  sonarcloud: sonarsource/sonarcloud@2.0.0
+
+jobs:
+  # ── Job 1: Install, Audit & Build ──────────────────────────────────────
+  build-and-audit:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+
+      - node/install-packages:
+          pkg-manager: npm
+
+      # Security audit — fails if high severity vulnerabilities found
+      - run:
+          name: Run npm security audit
+          command: npm audit --audit-level=high
+
+      # Build production bundle
+      - run:
+          name: Build production app
+          command: npm run build
+          environment:
+            CI: "false"
+
+      # Persist build for deployment
+      - persist_to_workspace:
+          root: .
+          paths:
+            - build
+            - node_modules
+
+  # ── Job 2: SonarQube Scan ──────────────────────────────────────────────
+  sonarqube-scan:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      # SonarQube scans for:
+      # - Security hotspots (hardcoded secrets, unsafe functions)
+      # - Code smells (maintainability issues)
+      # - Bugs (reliability issues)
+      # - Vulnerabilities (security weaknesses like XSS, injection)
+      - sonarcloud/scan:
+          sonar_token_variable_name: SONAR_TOKEN
+
+  # ── Job 3: Deploy to Firebase Hosting ─────────────────────────────────
+  deploy:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: Install Firebase CLI
+          command: npm install -g firebase-tools
+
+      - run:
+          name: Deploy to Firebase Hosting (HTTPS)
+          command: firebase deploy --only hosting --token "$FIREBASE_TOKEN"
+
+# ── Workflow ───────────────────────────────────────────────────────────────
+workflows:
+  secure-build-deploy:
+    jobs:
+      - build-and-audit:
+          filters:
+            branches:
+              only: main
+
+      - sonarqube-scan:
+          requires:
+            - build-and-audit
+          context: SonarCloud
+          filters:
+            branches:
+              only: main
+
+      - deploy:
+          requires:
+            - sonarqube-scan
+          filters:
+            branches:
+              only: main

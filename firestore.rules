@@ -1,39 +1,45 @@
-// firestore.rules
-// Firestore Security Rules — controls who can read/write to the database
-// This protects against unauthorized data access (injection, privilege escalation)
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Customers collection ──────────────────────────────────────────────
-    // A customer can only read/write their OWN document
     match /customers/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false; // never allow customer self-deletion
+      allow delete: if false;
     }
 
-    // ── Transactions collection ───────────────────────────────────────────
-    // Customers can create and read their own transactions only
-    // Employees (handled separately) will have admin SDK access
     match /transactions/{txId} {
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
-        && request.resource.data.amount <= 10000000
-        && request.resource.data.currency is string
-        && request.resource.data.currency.size() == 3;
+        && request.resource.data.amount <= 10000000;
 
       allow read: if request.auth != null
-        && resource.data.uid == request.auth.uid;
+        && (resource.data.uid == request.auth.uid
+            || exists(/databases/$(database)/documents/employees/$(request.auth.uid)));
 
-      // Only server-side (admin) can update status
+      allow update: if request.auth != null
+        && exists(/databases/$(database)/documents/employees/$(request.auth.uid))
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(["status", "verifiedBy", "verifiedAt", "submittedBy", "submittedAt"]);
+
+      allow delete: if false;
+    }
+
+    match /employees/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /audit_logs/{logId} {
+      allow create: if request.auth != null
+        && exists(/databases/$(database)/documents/employees/$(request.auth.uid));
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/employees/$(request.auth.uid));
       allow update, delete: if false;
     }
 
-    // Block all other access
     match /{document=**} {
       allow read, write: if false;
     }

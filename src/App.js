@@ -2,39 +2,60 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./components/AuthContext";
+import { EmployeeAuthProvider } from "./components/EmployeeAuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import EmployeeProtectedRoute from "./components/EmployeeProtectedRoute";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import EmployeeLogin from "./pages/EmployeeLogin";
+import EmployeeDashboard from "./pages/EmployeeDashboard";
 import "./styles/global.css";
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Default: redirect to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+    <BrowserRouter>
+      <Routes>
+        {/* Default redirect */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* Public routes */}
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
+        {/* ── Customer routes ── */}
+        <Route path="/register" element={
+          <AuthProvider>
+            <Register />
+          </AuthProvider>
+        } />
+        <Route path="/login" element={
+          <AuthProvider>
+            <Login />
+          </AuthProvider>
+        } />
+        <Route path="/dashboard" element={
+          <AuthProvider>
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          </AuthProvider>
+        } />
 
-          {/* Protected routes — requires authentication */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+        {/* ── Employee routes ── */}
+        <Route path="/employee/login" element={
+          <EmployeeAuthProvider>
+            <EmployeeLogin />
+          </EmployeeAuthProvider>
+        } />
+        <Route path="/employee/dashboard" element={
+          <EmployeeAuthProvider>
+            <EmployeeProtectedRoute>
+              <EmployeeDashboard />
+            </EmployeeProtectedRoute>
+          </EmployeeAuthProvider>
+        } />
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
