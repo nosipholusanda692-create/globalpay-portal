@@ -20,19 +20,16 @@ jobs:
       - node/install-packages:
           pkg-manager: npm
 
-      # Security audit — fails if high severity vulnerabilities found
       - run:
           name: Run npm security audit
           command: npm audit --audit-level=high
 
-      # Build production bundle
       - run:
           name: Build production app
           command: npm run build
           environment:
             CI: "false"
 
-      # Persist build for deployment
       - persist_to_workspace:
           root: .
           paths:
@@ -49,11 +46,6 @@ jobs:
       - attach_workspace:
           at: .
 
-      # SonarQube scans for:
-      # - Security hotspots (hardcoded secrets, unsafe functions)
-      # - Code smells (maintainability issues)
-      # - Bugs (reliability issues)
-      # - Vulnerabilities (security weaknesses like XSS, injection)
       - sonarcloud/scan:
           sonar_token_variable_name: SONAR_TOKEN
 
