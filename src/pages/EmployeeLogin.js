@@ -85,10 +85,15 @@ export default function EmployeeLogin() {
 
     setLoading(true);
     try {
-      await employeeLogin({ username: form.username, password: form.password });
+      const result = await employeeLogin({ username: form.username, password: form.password });
       clearAttempts();
-      rotateCSRFToken(); // Rotate token after successful login
-      navigate("/employee/dashboard");
+      rotateCSRFToken();
+      // Redirect admin to admin dashboard, employees to employee dashboard
+      if (result?.role === "admin") {
+        navigate("/employee/admin");
+      } else {
+        navigate("/employee/dashboard");
+      }
     } catch (err) {
       const result = recordFailedAttempt();
       if (result.locked) {

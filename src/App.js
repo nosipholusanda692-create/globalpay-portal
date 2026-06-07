@@ -10,53 +10,52 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import EmployeeLogin from "./pages/EmployeeLogin";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import "./styles/global.css";
 
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* ── Customer routes ── */}
-        <Route path="/register" element={
-          <AuthProvider>
-            <Register />
-          </AuthProvider>
-        } />
-        <Route path="/login" element={
-          <AuthProvider>
-            <Login />
-          </AuthProvider>
-        } />
-        <Route path="/dashboard" element={
-          <AuthProvider>
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          </AuthProvider>
-        } />
+                {/* ── Customer routes — wrapped in AuthProvider ── */}
+                <Route path="/register" element={
+                    <AuthProvider><Register /></AuthProvider>
+                } />
+                <Route path="/login" element={
+                    <AuthProvider><Login /></AuthProvider>
+                } />
+                <Route path="/dashboard" element={
+                    <AuthProvider>
+                        <ProtectedRoute><Dashboard /></ProtectedRoute>
+                    </AuthProvider>
+                } />
 
-        {/* ── Employee routes ── */}
-        <Route path="/employee/login" element={
-          <EmployeeAuthProvider>
-            <EmployeeLogin />
-          </EmployeeAuthProvider>
-        } />
-        <Route path="/employee/dashboard" element={
-          <EmployeeAuthProvider>
-            <EmployeeProtectedRoute>
-              <EmployeeDashboard />
-            </EmployeeProtectedRoute>
-          </EmployeeAuthProvider>
-        } />
+                {/* ── Employee + Admin routes — wrapped in EmployeeAuthProvider ONLY ── */}
+                <Route path="/employee/*" element={
+                    <EmployeeAuthProvider>
+                        <Routes>
+                            <Route path="login" element={<EmployeeLogin />} />
+                            <Route path="dashboard" element={
+                                <EmployeeProtectedRoute>
+                                    <EmployeeDashboard />
+                                </EmployeeProtectedRoute>
+                            } />
+                            <Route path="admin" element={
+                                <EmployeeProtectedRoute adminOnly={true}>
+                                    <AdminDashboard />
+                                </EmployeeProtectedRoute>
+                            } />
+                            <Route path="*" element={<Navigate to="/employee/login" replace />} />
+                        </Routes>
+                    </EmployeeAuthProvider>
+                } />
 
-        {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </BrowserRouter>
-  );
+                <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
 export default App;

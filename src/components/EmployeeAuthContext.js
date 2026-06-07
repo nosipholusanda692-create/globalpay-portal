@@ -30,20 +30,26 @@ export const EmployeeAuthProvider = ({ children }) => {
     return null;
   };
 
-  const employeeLogin = async ({ username, password }) => {
-    const syntheticEmail = `${username.toLowerCase().trim()}@globalpay-employee.internal`;
-    const credential = await signInWithEmailAndPassword(auth, syntheticEmail, password);
-    const data = await fetchEmployeeData(credential.user.uid);
+    const employeeLogin = async ({ username, password }) => {
+        const syntheticEmail = `${username.toLowerCase().trim()}@globalpay-employee.internal`;
+        console.log("1. Trying email:", syntheticEmail);
 
-    // Verify this is actually an employee account
-    if (!data || data.role !== "employee") {
-      await signOut(auth);
-      throw new Error("Access denied. Employee accounts only.");
-    }
+        const credential = await signInWithEmailAndPassword(auth, syntheticEmail, password);
+        console.log("2. Firebase Auth success, UID:", credential.user.uid);
 
-    await logAuditEvent(credential.user.uid, username, AUDIT_ACTIONS.LOGIN, {});
-    return credential.user;
-  };
+        const data = await fetchEmployeeData(credential.user.uid);
+        console.log("3. Firestore data:", data);
+        console.log("4. Role:", data?.role);
+
+        if (!data || (data.role !== "employee" && data.role !== "admin")) {
+            console.log("5. ACCESS DENIED - role is:", data?.role);
+            await signOut(auth);
+            throw new Error("Access denied. Employee accounts only.");
+        }
+
+        await logAuditEvent(credential.user.uid, username, AUDIT_ACTIONS.LOGIN, {});
+        return { ...credential.user, role: data.role };
+    };
 
   const employeeLogout = async (reason = "manual") => {
     if (employeeUser && employeeData) {
@@ -65,7 +71,7 @@ export const EmployeeAuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const data = await fetchEmployeeData(user.uid);
-        if (data?.role === "employee") {
+        if (data?.role === "employee" || data?.role === "admin") {
           setEmployeeUser(user);
           // Start session timeout — warn at 13 min, logout at 15 min
           startSessionTimer(
